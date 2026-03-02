@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specimen Data System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: white; width: 100%; max-width: 450px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; display: none; }
+        #photo img { width: 100%; height: auto; max-height: 300px; object-fit: cover; background-color: #eee; }
+        .content { padding: 25px; }
+        h1 { color: #1a73e8; font-size: 24px; margin: 0 0 20px 0; font-style: italic; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .label { color: #7f8c8d; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-top: 15px; }
+        .value { color: #202124; font-size: 16px; margin-bottom: 10px; border-left: 3px solid #1a73e8; padding-left: 10px; line-height: 1.5; }
+        .error { color: #d93025; text-align: center; margin-top: 50px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="app" class="card">
+        <div id="photo"></div>
+        <div class="content">
+            <h1 id="scientific_name"></h1>
+            <p class="label">ID</p><p id="specimen_id" class="value"></p>
+            <p class="label">Classification</p><p id="taxon" class="value"></p>
+            <p class="label">Common Name</p><p id="common" class="value"></p>
+            <p class="label">Location / Date</p><p id="meta" class="value"></p>
+        </div>
+    </div>
+    <div id="msg" class="error">กำลังโหลดข้อมูล...</div>
+
+    <script>
+        // *** จุดสำคัญ: เอาลิงก์ CSV จาก Google Sheets มาวางในเครื่องหมายคำพูดข้างล่างนี้ ***
+        const csvUrl = "วางลิงก์_CSV_ของคุณที่นี่"; 
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id');
+
+        if (!targetId) {
+            document.getElementById('msg').innerText = "กรุณาระบุ ID ใน URL (เช่น ?id=G60210001)";
+        } else {
+            Papa.parse(csvUrl, {
+                download: true, 
+                header: true,
+                complete: function(results) {
+                    const data = results.data;
+                    // ค้นหา ID ที่ตรงกับใน URL
+                    const item = data.find(row => row.id && row.id.trim() === targetId.trim());
+                    
+                    if (item) {
+                        document.getElementById('scientific_name').innerText = item.scientific_name || "ไม่ระบุชื่อวิทยาศาสตร์";
+                        document.getElementById('specimen_id').innerText = item.id;
+                        document.getElementById('taxon').innerText = (item.phylum || "-") + " > " + (item.class || "-") + " > " + (item.family || "-");
+                        document.getElementById('common').innerText = item.common_name || "-";
+                        document.getElementById('meta').innerText = (item.location || "-") + " / " + (item.date || "-");
+                        
+                        if (item.image_url && item.image_url.trim() !== "") {
+                            document.getElementById('photo').innerHTML = `<img src="${item.image_url}" alt="Specimen Photo">`;
+                        }
+                        
+                        document.getElementById('app').style.display = "block";
+                        document.getElementById('msg').style.display = "none";
+                    } else {
+                        document.getElementById('msg').innerText = "❌ ไม่พบรหัสตัวอย่าง: " + targetId;
+                    }
+                },
+                error: function(err) {
+                    document.getElementById('msg').innerText = "⚠️ เกิดข้อผิดพลาดในการโหลดไฟล์ข้อมูล";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
