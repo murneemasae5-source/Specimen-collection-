@@ -41,4 +41,74 @@
     </div>
 
     <script>
-        // ลิง
+        // ลิงก์ฐานข้อมูลแผ่นงานใหม่ล่าสุดของคุณ
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=1005317173&single=true&output=csv"; 
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id');
+
+        // ฟังก์ชันช่วยเปลี่ยนช่องที่ไม่มีข้อมูลให้แสดงเครื่องหมาย "-"
+        function safeText(val) {
+            return (val && val.toString().trim() !== "") ? val.toString().trim() : "-";
+        }
+
+        if (!targetId) {
+            document.getElementById('loading').innerText = "❌ ไม่พบรหัสไอดีในลิงก์สแกน";
+        } else {
+            Papa.parse(csvUrl, {
+                download: true,
+                header: false, // สแกนตำแหน่งคอลัมน์จากซ้ายไปขวาตรงๆ
+                skipEmptyLines: true,
+                complete: function(results) {
+                    try {
+                        // ค้นหาแถวที่มีค่า ID ตรงกัน (เช่น INV009)
+                        let foundRow = results.data.find(row => row[0] && row[0].toString().trim() === targetId.trim());
+                        
+                        if (foundRow) {
+                            // ดึงข้อมูลตามคอลัมน์ (A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8)
+                            let pSci = safeText(foundRow[4]); // คอลัมน์ E ชื่อวิทยาศาสตร์
+                            let pCommon = safeText(foundRow[5]); // คอลัมน์ F ชื่อเรียกภาษาไทย
+                            
+                            // แสดงชื่อหลัก: ถ้าไม่มีชื่อวิทยาศาสตร์ จะเอาชื่อเรียกภาษาไทยมาขึ้นแทน
+                            if (pSci === "-" && pCommon !== "-") {
+                                document.getElementById('scientific_name').innerText = pCommon;
+                            } else {
+                                document.getElementById('scientific_name').innerText = pSci === "-" ? "ไม่ระบุชื่อวิทยาศาสตร์" : pSci;
+                            }
+
+                            document.getElementById('specimen_id').innerText = "ID: " + targetId;
+                            document.getElementById('phylum').innerText = safeText(foundRow[1]); // คอลัมน์ B
+                            document.getElementById('class').innerText = safeText(foundRow[2]);  // คอลัมน์ C
+                            document.getElementById('family').innerText = safeText(foundRow[3]); // คอลัมน์ D
+                            document.getElementById('location').innerText = safeText(foundRow[6]); // คอลัมน์ G
+                            document.getElementById('date').innerText = safeText(foundRow[7]);     // คอลัมน์ H
+
+                            // ตรวจสอบรูปภาพคอลัมน์ I
+                            const photoBox = document.getElementById('photo');
+                            let imgUrl = foundRow[8] ? foundRow[8].toString().trim() : "";
+                            if (imgUrl !== "" && !imgUrl.includes("blob") && imgUrl !== "-") {
+                                photoBox.innerHTML = `<img src="${imgUrl}">`;
+                                photoBox.style.display = "block";
+                            } else {
+                                photoBox.style.display = "none";
+                            }
+
+                            // เปิดหน้าการ์ดข้อมูล
+                            document.getElementById('app').style.display = "block";
+                            document.getElementById('loading').style.display = "none";
+                        } else {
+                            document.getElementById('loading').innerText = "❌ ไม่พบข้อมูลรหัส " + targetId + " ในระบบตาราง";
+                        }
+                    } catch (error) {
+                        document.getElementById('loading').innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลระบบข้อมูล";
+                        console.error(error);
+                    }
+                },
+                error: function() {
+                    document.getElementById('loading').innerText = "❌ ไม่สามารถติดต่อฐานข้อมูล Google Sheets ได้";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
