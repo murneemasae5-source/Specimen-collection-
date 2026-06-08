@@ -65,30 +65,35 @@
             download: true,
             header: true,
             complete: function(results) {
-                // ค้นหาข้อมูลตามรหัส id คอลัมน์แรกสุด
-                const item = results.data.find(row => row.id && row.id.trim() === targetId);
+                // ปรับปรุงใหม่: ค้นหาโดยเช็คค่าจากคอลัมน์แรกสุดของแถว ไม่ล็อกตามชื่อหัวตาราง ป้องกันบั๊กตัวอักษรซ่อน
+                const item = results.data.find(row => {
+                    const keys = Object.keys(row);
+                    return row[keys[0]] && row[keys[0]].trim() === targetId;
+                });
                 
                 if (item) {
-                    // ดึงค่าตามชื่อภาษาอังกฤษของหัวตารางจริงใน Excel ของคุณเป๊ะๆ
-                    document.getElementById('scientific_name').innerText = item.scientific_name || "ไม่ระบุชื่อวิทยาศาสตร์"; 
-                    document.getElementById('specimen_id').innerText = "ID: " + item.id;
-                    document.getElementById('phylum').innerText = item.phylum || "-"; 
-                    document.getElementById('class').innerText = item.class || "-";
-                    document.getElementById('family').innerText = item.order_family || "-";
-                    document.getElementById('location').innerText = item.location || "-";
-                    document.getElementById('date').innerText = item.date || "-";
+                    const keys = Object.keys(item);
+                    // ดึงข้อมูลเรียงตามลำดับคอลัมน์จริงใน Google Sheets (A, B, C, D, E, F, G, H)
+                    document.getElementById('scientific_name').innerText = item[keys[4]] || "ไม่ระบุชื่อวิทยาศาสตร์"; // คอลัมน์ E (scientific_name)
+                    document.getElementById('specimen_id').innerText = "ID: " + targetId;
+                    document.getElementById('phylum').innerText = item[keys[1]] || "-";   // คอลัมน์ B (phylum)
+                    document.getElementById('class').innerText = item[keys[2]] || "-";    // คอลัมน์ C (class)
+                    document.getElementById('family').innerText = item[keys[3]] || "-";   // คอลัมน์ D (order_family)
+                    document.getElementById('location').innerText = item[keys[6]] || "-"; // คอลัมน์ G (location)
+                    document.getElementById('date').innerText = item[keys[7]] || "-";     // คอลัมน์ H (date)
 
-                    // ตัวควบคุมรูปภาพ ซ่อนกล่องอัตโนมัติหากตรวจไม่เจอลิงก์ภาพ
+                    // เช็คและควบคุมรูปภาพ (คอลัมน์ I อยู่ตำแหน่งที่ 8)
                     const photoBox = document.getElementById('photo');
-                    if (item.image_url && item.image_url.trim() !== "" && !item.image_url.includes("blob")) {
-                        photoBox.innerHTML = `<img src="${item.image_url}">`;
+                    const imageUrl = item[keys[8]];
+                    if (imageUrl && imageUrl.trim() !== "" && !imageUrl.includes("blob")) {
+                        photoBox.innerHTML = `<img src="${imageUrl}">`;
                         photoBox.style.display = "block"; 
                     }
 
                     document.getElementById('app').style.display = "block";
                     document.getElementById('loading').style.display = "none";
                 } else {
-                    document.getElementById('loading').innerText = "❌ ไม่พบรหัสตัวอย่างนี้ในระบบคลังใหม่";
+                    document.getElementById('loading').innerText = "❌ ไม่พบรหัส " + targetId + " ในระบบคลัง";
                 }
             }
         });
