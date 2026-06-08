@@ -3,153 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Specimen Collection - Digital Lab</title>
+    <title>Specimen Collection - Digital Lab (New)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        /* สไตล์พื้นหลังสีเทาเข้มแบบ Museum */
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            background: #121212; 
-            color: #ffffff; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            min-height: 100vh;
-            margin: 0; 
-            padding: 20px;
-        }
-
-        .card { 
-            background: #1e1e1e; 
-            width: 100%; 
-            max-width: 500px; 
-            border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-            overflow: hidden; 
-            display: none; 
-            border: 1px solid #333;
-        }
-
-        /* ลูกเล่น Image Zoom */
-        .photo-container {
-            width: 100%;
-            height: 350px;
-            overflow: hidden; /* ตัดส่วนที่เกินออกเวลาซูม */
-            background: #000;
-        }
-
-        .photo-container img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transition: transform 0.5s ease; /* หน่วงเวลาให้ซูมนุ่มนวล */
-            cursor: zoom-in;
-        }
-
-        .photo-container img:hover {
-            transform: scale(1.2); /* ซูมเข้าไป 20% */
-        }
-
-        .content { padding: 30px; }
-
-        h1 { 
-            color: #bb86fc; /* สีม่วงอ่อนสไตล์ Dark Mode */
-            font-size: 28px; 
-            margin: 0 0 5px 0; 
-            font-style: italic;
-        }
-
-        .common-name {
-            color: #03dac6; /* สีฟ้ามิ้นท์ */
-            font-size: 18px;
-            margin-bottom: 25px;
-        }
-
-        .info-group {
-            margin-bottom: 20px;
-            border-left: 2px solid #333;
-            padding-left: 15px;
-        }
-
-        .label { 
-            color: #888; 
-            font-size: 12px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-        }
-
-        .value { 
-            color: #e0e0e0; 
-            font-size: 16px; 
-            margin: 5px 0 0 0;
-        }
-
-        .error { color: #cf6679; text-align: center; }
+        body { font-family: 'Sarabun', sans-serif; background: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); overflow: hidden; display: none; border: 1px solid #333; }
+        .photo-container { width: 100%; max-height: 300px; background: #000; overflow: hidden; display: none; }
+        .photo-container img { width: 100%; height: 100%; object-fit: contain; }
+        .content { padding: 25px; }
+        h1 { font-size: 24px; margin: 0 0 10px 0; color: #bb86fc; }
+        .specimen-id { font-size: 16px; color: #888; font-family: monospace; margin-bottom: 20px; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table th, .info-table td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #333; }
+        .info-table th { color: #03dac6; width: 35%; font-size: 14px; }
+        .info-table td { color: #e0e0e0; font-size: 15px; }
+        #loading { font-size: 18px; color: #888; }
     </style>
 </head>
 <body>
+
+    <div id="loading">🔍 กำลังดึงข้อมูลอนุกรมวิธาน...</div>
+
     <div id="app" class="card">
-        <div class="photo-container" id="photo"></div>
+        <div id="photo" class="photo-container"></div>
         <div class="content">
-            <h1 id="scientific_name"></h1>
-            <div id="common_name" class="common-name"></div>
+            <h1 id="scientific_name">-</h1>
+            <div id="specimen_id" class="specimen-id"></div>
             
-            <div class="info-group">
-                <p class="label">Specimen ID</p>
-                <p id="specimen_id" class="value"></p>
-            </div>
-
-            <div class="info-group">
-                <p class="label">Taxonomy</p>
-                <p id="taxon" class="value"></p>
-            </div>
-
-            <div class="info-group">
-                <p class="label">Collection Site & Date</p>
-                <p id="meta" class="value"></p>
-            </div>
+            <table class="info-table">
+                <tr>
+                    <th>Phylum</th>
+                    <td id="phylum">-</td>
+                </tr>
+                <tr>
+                    <th>Class</th>
+                    <td id="class">-</td>
+                </tr>
+                <tr>
+                    <th>Order/Family</th>
+                    <td id="family">-</td>
+                </tr>
+                <tr>
+                    <th>Location</th>
+                    <td id="location">-</td>
+                </tr>
+                <tr>
+                    <th>Date</th>
+                    <td id="date">-</td>
+                </tr>
+            </table>
         </div>
     </div>
-    <div id="msg" class="error">กำลังเปิดฐานข้อมูล...</div>
 
     <script>
-        // อย่าลืมวางลิงก์ CSV ของคุณที่นี่
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD5f6kiHSI0Y9E0-KJZGybjf9ctW8Tm1p581TwvXHQIVuPf-ikYjxxPeEKSFjAWw/pub?gid=1005317173&single=true&output=csv"; 
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTf9zKjN_M_4Y_1N5m-UoBIsF_T06Gscq58vXoU5o6W1-YV7Z6tG79p9xR-U9N-X5n_Y_W2M7gD5A/pub?output=csv"; 
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('id');
 
-        if (!targetId) {
-            document.getElementById('msg').innerText = "กรุณาระบุ ID ของตัวอย่างสัตว์";
-        } else {
-            Papa.parse(csvUrl, {
-                download: true, 
-                header: true,
-                complete: function(results) {
-                    const item = results.data.find(row => row.id && row.id.trim() === targetId.trim());
-                    if (item) {
-                        document.getElementById('scientific_name').innerText = item.scientific_name || "Unknown Species";
-                        document.getElementById('common_name').innerText = item.common_name || "";
-                        document.getElementById('specimen_id').innerText = item.id;
-                        document.getElementById('taxon').innerText = `${item.phylum} > ${item.class} > ${item.family}`;
-                        document.getElementById('meta').innerText = `${item.location} / ${item.date}`;
-                        
-                        if (item.image_url) {
-                            document.getElementById('photo').innerHTML = `<img src="${item.image_url}" alt="Specimen">`;
-                        }
-                        
-                        document.getElementById('app').style.display = "block";
-                        document.getElementById('msg').style.display = "none";
-                    } else {
-                        document.getElementById('msg').innerText = "❌ ไม่พบรหัส: " + targetId;
-                    }
-                },
-                error: function() {
-                    document.getElementById('msg').innerText = "⚠️ ไม่สามารถเชื่อมต่อฐานข้อมูลได้";
-                }
-            });
+        // ฟังก์ชันช่วยเช็คค่าว่าง ถ้าไม่มีข้อมูลหรือเป็นช่องว่าง ให้แสดงเป็น "-"
+        function checkValue(val) {
+            if (!val || val.trim() === "" || val.trim() === "-") {
+                return "-";
+            }
+            return val.trim();
         }
-    </script>
-</body>
-</html>
+
+        Papa.parse(csvUrl, {
+            download: true,
+            header: false, // เปลี่ยนเป็นสแกนตามเลขดัชนีคอลัมน์แทน ป้องกันบั๊กหัวตารางพิมพ์เล็กพิมพ์ใหญ่
+            complete: function(results) {
+                // ค้นหาแถวข้อมูลที่มีคอลัมน์แรกสุด (Index 0) ตรงกับ targetId
+                const foundRow = results.data.find(row => row[0] && row[0].trim() === targetId);
+                
+                if (foundRow) {
+                    // จัดการแสดงผลข้อมูลตามตำแหน่งคอลัมน์จริง (A=0, B=1, C=2, D
