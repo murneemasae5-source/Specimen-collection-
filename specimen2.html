@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specimen Collection - Digital Lab (New)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); overflow: hidden; display: none; border: 1px solid #333; }
+        .photo-container { width: 100%; max-height: 300px; background: #000; overflow: hidden; display: none; }
+        .photo-container img { width: 100%; height: 100%; object-fit: contain; }
+        .content { padding: 25px; }
+        h1 { font-size: 24px; margin: 0 0 10px 0; color: #bb86fc; }
+        .specimen-id { font-size: 16px; color: #888; font-family: monospace; margin-bottom: 20px; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table th, .info-table td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #333; }
+        .info-table th { color: #03dac6; width: 35%; font-size: 14px; }
+        .info-table td { color: #e0e0e0; font-size: 15px; }
+        #loading { font-size: 18px; color: #888; }
+    </style>
+</head>
+<body>
+    <div id="loading">🔍 กำลังดึงข้อมูลอนุกรมวิธาน...</div>
+    <div id="app" class="card">
+        <div id="photo" class="photo-container"></div>
+        <div class="content">
+            <h1 id="scientific_name">-</h1>
+            <div id="specimen_id" class="specimen-id"></div>
+            <table class="info-table">
+                <tr><th>Phylum</th><td id="phylum">-</td></tr>
+                <tr><th>Class</th><td id="class">-</td></tr>
+                <tr><th>Order/Family</th><td id="family">-</td></tr>
+                <tr><th>Location</th><td id="location">-</td></tr>
+                <tr><th>Date</th><td id="date">-</td></tr>
+            </table>
+        </div>
+    </div>
+    <script>
+        // ใช้ลิงก์จากระบบเดิมของคุณ
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTf9zKjN_M_4Y_1N5m-UoBIsF_T06Gscq58vXoU5o6W1-YV7Z6tG79p9xR-U9N-X5n_Y_W2M7gD5A/pub?output=csv"; 
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id');
+
+        Papa.parse(csvUrl, {
+            download: true, header: true,
+            complete: function(results) {
+                const item = results.data.find(row => row.id && row.id.trim() === targetId);
+                if (item) {
+                    // ดึงข้อมูลล้อตามหัวข้อคอลัมน์ของตารางสัตว์ไม่มีกระดูกสันหลังของคุณ
+                    document.getElementById('scientific_name').innerText = item.scientific_name || "ไม่ระบุชื่อวิทยาศาสตร์";
+                    document.getElementById('specimen_id').innerText = "ID: " + item.id;
+                    document.getElementById('phylum').innerText = item.phylum || "-"; 
+                    document.getElementById('class').innerText = item.class || "-";
+                    document.getElementById('family').innerText = item.order_family || "-";
+                    document.getElementById('location').innerText = item.location || "-";
+                    document.getElementById('date').innerText = item.date || "-";
+
+                    const photoBox = document.getElementById('photo');
+                    if (item.image_url && item.image_url.trim() !== "" && !item.image_url.includes("blob")) {
+                        photoBox.innerHTML = `<img src="${item.image_url}">`;
+                        photoBox.style.display = "block"; 
+                    }
+                    document.getElementById('app').style.display = "block";
+                    document.getElementById('loading').style.display = "none";
+                } else {
+                    document.getElementById('loading').innerText = "❌ ไม่พบรหัสตัวอย่างนี้ในระบบ";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
