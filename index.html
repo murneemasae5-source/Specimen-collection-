@@ -84,7 +84,7 @@
             margin: 5px 0 0 0;
         }
 
-        .error { color: #cf6679; text-align: center; font-size: 18px; }
+        .error { color: #cf6679; text-align: center; font-size: 18px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -113,8 +113,8 @@
     <div id="msg" class="error">🔍 กำลังเปิดฐานข้อมูล...</div>
 
     <script>
-        // ชี้ไปที่แผ่นงาน Copy of Sheet1 (gid=11030081)
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=11030081&single=true&output=csv"; 
+        // เชื่อมต่อตรงไปยัง Sheet1 (gid=1005317173)
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=1005317173&single=true&output=csv"; 
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('id');
@@ -126,13 +126,19 @@
         if (!targetId) {
             document.getElementById('msg').innerText = "❌ กรุณาระบุ ID ของตัวอย่างสัตว์ในลิงก์";
         } else {
-            Papa.parse(csvUrl, {
-                download: true, 
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
+            fetch(csvUrl + "&t=" + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.text();
+                })
+                .then(csvText => {
+                    const results = Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true
+                    });
+
                     const cleanTarget = targetId.trim();
-                    // ค้นหาจากรหัสใหม่ในคอลัมน์ B (new_id) ก่อน ถ้าไม่เจอจะหาจากรหัสเดิมคอลัมน์ A (id)
+                    // ค้นหาจากคอลัมน์ B (new_id) ก่อน ถ้าไม่เจอจะหาจากคอลัมน์ A (id)
                     const item = results.data.find(row => 
                         (row.new_id && row.new_id.trim() === cleanTarget) || 
                         (row.id && row.id.trim() === cleanTarget)
@@ -140,4 +146,33 @@
 
                     if (item) {
                         document.getElementById('scientific_name').innerText = safeText(item.scientific_name);
-                        document.
+                        document.getElementById('common_name').innerText = (item.common_name && item.common_name.trim() !== "") ? item.common_name.trim() : "";
+                        
+                        // แสดงเฉพาะรหัสในคอลัมน์ B (new_id) แทนที่ตำแหน่ง SPECIMEN ID
+                        document.getElementById('specimen_id').innerText = safeText(item.new_id);
+
+                        document.getElementById('taxon').innerText = `${safeText(item.phylum)} > ${safeText(item.class)} > ${safeText(item.family)}`;
+                        document.getElementById('meta').innerText = `${safeText(item.location)} / ${safeText(item.date)}`;
+                        
+                        const photoBox = document.getElementById('photo');
+                        const imgUrl = item.image_url ? item.image_url.trim() : "";
+                        if (imgUrl !== "" && !imgUrl.includes("blob") && imgUrl !== "-") {
+                            photoBox.innerHTML = `<img src="${imgUrl}" alt="Specimen">`;
+                            photoBox.style.display = "block";
+                        } else {
+                            photoBox.style.display = "none";
+                        }
+                        
+                        document.getElementById('app').style.display = "block";
+                        document.getElementById('msg').style.display = "none";
+                    } else {
+                        document.getElementById('msg').innerText = "❌ ไม่พบรหัส: " + targetId;
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('msg').innerHTML = "⚠️ ไม่สามารถดึงข้อมูลจาก Sheet1 ได้<br><small>กรุณาตรวจสอบการ Publish to web ใน Google Sheets</small>";
+                });
+        }
+    </script>
+</body>
+</html>
