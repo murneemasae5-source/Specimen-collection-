@@ -17,7 +17,6 @@
             margin: 0; 
             padding: 20px;
         }
-
         .card { 
             background: #1e1e1e; 
             width: 100%; 
@@ -28,7 +27,6 @@
             display: none; 
             border: 1px solid #333;
         }
-
         .photo-container {
             width: 100%;
             height: 350px;
@@ -36,7 +34,6 @@
             background: #000;
             display: none;
         }
-
         .photo-container img { 
             width: 100%; 
             height: 100%; 
@@ -44,46 +41,13 @@
             transition: transform 0.5s ease;
             cursor: zoom-in;
         }
-
-        .photo-container img:hover {
-            transform: scale(1.2);
-        }
-
+        .photo-container img:hover { transform: scale(1.2); }
         .content { padding: 30px; }
-
-        h1 { 
-            color: #bb86fc; 
-            font-size: 28px; 
-            margin: 0 0 5px 0; 
-            font-style: italic;
-        }
-
-        .common-name {
-            color: #03dac6; 
-            font-size: 18px;
-            margin-bottom: 25px;
-        }
-
-        .info-group {
-            margin-bottom: 20px;
-            border-left: 2px solid #333;
-            padding-left: 15px;
-        }
-
-        .label { 
-            color: #888; 
-            font-size: 12px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-        }
-
-        .value { 
-            color: #e0e0e0; 
-            font-size: 16px; 
-            margin: 5px 0 0 0;
-        }
-
+        h1 { color: #bb86fc; font-size: 28px; margin: 0 0 5px 0; font-style: italic; }
+        .common-name { color: #03dac6; font-size: 18px; margin-bottom: 25px; }
+        .info-group { margin-bottom: 20px; border-left: 2px solid #333; padding-left: 15px; }
+        .label { color: #888; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .value { color: #e0e0e0; font-size: 16px; margin: 5px 0 0 0; }
         .error { color: #cf6679; text-align: center; font-size: 18px; line-height: 1.6; }
     </style>
 </head>
@@ -93,17 +57,14 @@
         <div class="content">
             <h1 id="scientific_name"></h1>
             <div id="common_name" class="common-name"></div>
-            
             <div class="info-group">
                 <p class="label">Specimen ID</p>
                 <p id="specimen_id" class="value"></p>
             </div>
-
             <div class="info-group">
                 <p class="label">Taxonomy</p>
                 <p id="taxon" class="value"></p>
             </div>
-
             <div class="info-group">
                 <p class="label">Collection Site & Date</p>
                 <p id="meta" class="value"></p>
@@ -113,7 +74,7 @@
     <div id="msg" class="error">🔍 กำลังเปิดฐานข้อมูล...</div>
 
     <script>
-        // เชื่อมต่อตรงไปยัง Sheet1 (gid=1005317173)
+        // ลิงก์ CSV ของ Sheet1 (gid=1005317173) พร้อมใช้งาน
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=1005317173&single=true&output=csv"; 
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -126,9 +87,13 @@
         if (!targetId) {
             document.getElementById('msg').innerText = "❌ กรุณาระบุ ID ของตัวอย่างสัตว์ในลิงก์";
         } else {
-            fetch(csvUrl + "&t=" + new Date().getTime())
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            fetch(csvUrl + "&t=" + new Date().getTime(), { signal: controller.signal })
                 .then(response => {
-                    if (!response.ok) throw new Error("Network response was not ok");
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error("โหลดไฟล์ CSV ไม่สำเร็จ (Status: " + response.status + ")");
                     return response.text();
                 })
                 .then(csvText => {
@@ -148,31 +113,7 @@
                         document.getElementById('scientific_name').innerText = safeText(item.scientific_name);
                         document.getElementById('common_name').innerText = (item.common_name && item.common_name.trim() !== "") ? item.common_name.trim() : "";
                         
-                        // แสดงเฉพาะรหัสในคอลัมน์ B (new_id) แทนที่ตำแหน่ง SPECIMEN ID
+                        // แสดงเฉพาะรหัสใหม่ในคอลัมน์ B (new_id)
                         document.getElementById('specimen_id').innerText = safeText(item.new_id);
-
-                        document.getElementById('taxon').innerText = `${safeText(item.phylum)} > ${safeText(item.class)} > ${safeText(item.family)}`;
-                        document.getElementById('meta').innerText = `${safeText(item.location)} / ${safeText(item.date)}`;
                         
-                        const photoBox = document.getElementById('photo');
-                        const imgUrl = item.image_url ? item.image_url.trim() : "";
-                        if (imgUrl !== "" && !imgUrl.includes("blob") && imgUrl !== "-") {
-                            photoBox.innerHTML = `<img src="${imgUrl}" alt="Specimen">`;
-                            photoBox.style.display = "block";
-                        } else {
-                            photoBox.style.display = "none";
-                        }
-                        
-                        document.getElementById('app').style.display = "block";
-                        document.getElementById('msg').style.display = "none";
-                    } else {
-                        document.getElementById('msg').innerText = "❌ ไม่พบรหัส: " + targetId;
-                    }
-                })
-                .catch(err => {
-                    document.getElementById('msg').innerHTML = "⚠️ ไม่สามารถดึงข้อมูลจาก Sheet1 ได้<br><small>กรุณาตรวจสอบการ Publish to web ใน Google Sheets</small>";
-                });
-        }
-    </script>
-</body>
-</html>
+                        document.getElementById('taxon').
