@@ -113,8 +113,8 @@
     <div id="msg" class="error">🔍 กำลังเปิดฐานข้อมูล...</div>
 
     <script>
-        // ลิงก์ CSV ตัวล่าสุดของคุณ
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=1005317173&single=true&output=csv"; 
+        // ชี้ไปที่แผ่นงาน Copy of Sheet1 (gid=11030081)
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSii-svq-iiIOJcHaM5Kqaj7_dAKshmgwTyq8N1Q7JavdlhAAULOjoXWtw0kQFzAg5d5mCEw7lvorvV/pub?gid=11030081&single=true&output=csv"; 
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('id');
@@ -132,44 +132,12 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     const cleanTarget = targetId.trim();
-                    // ค้นหาจากรหัสใหม่ (new_id) ก่อน ถ้าไม่เจอจะหาจากรหัสเดิม (id) หรือชื่อวิทยาศาสตร์
+                    // ค้นหาจากรหัสใหม่ในคอลัมน์ B (new_id) ก่อน ถ้าไม่เจอจะหาจากรหัสเดิมคอลัมน์ A (id)
                     const item = results.data.find(row => 
                         (row.new_id && row.new_id.trim() === cleanTarget) || 
-                        (row.id && row.id.trim() === cleanTarget) ||
-                        (row.scientific_name && row.scientific_name.trim() === cleanTarget)
+                        (row.id && row.id.trim() === cleanTarget)
                     );
 
                     if (item) {
                         document.getElementById('scientific_name').innerText = safeText(item.scientific_name);
-                        document.getElementById('common_name').innerText = (item.common_name && item.common_name.trim() !== "") ? item.common_name.trim() : "";
-                        
-                        // แสดงรหัสใหม่ (new_id) เป็นหลัก ถ้าช่องรหัสใหม่ว่าง ให้แสดงรหัสเดิม (id) แทน
-                        const displayId = (item.new_id && item.new_id.trim() !== "") ? item.new_id.trim() : safeText(item.id);
-                        document.getElementById('specimen_id').innerText = displayId;
-
-                        document.getElementById('taxon').innerText = `${safeText(item.phylum)} > ${safeText(item.class)} > ${safeText(item.family)}`;
-                        document.getElementById('meta').innerText = `${safeText(item.location)} / ${safeText(item.date)}`;
-                        
-                        const photoBox = document.getElementById('photo');
-                        const imgUrl = item.image_url ? item.image_url.trim() : "";
-                        if (imgUrl !== "" && !imgUrl.includes("blob") && imgUrl !== "-") {
-                            photoBox.innerHTML = `<img src="${imgUrl}" alt="Specimen">`;
-                            photoBox.style.display = "block";
-                        } else {
-                            photoBox.style.display = "none";
-                        }
-                        
-                        document.getElementById('app').style.display = "block";
-                        document.getElementById('msg').style.display = "none";
-                    } else {
-                        document.getElementById('msg').innerText = "❌ ไม่พบรหัส: " + targetId;
-                    }
-                },
-                error: function() {
-                    document.getElementById('msg').innerText = "⚠️ ไม่สามารถเชื่อมต่อฐานข้อมูลได้";
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                        document.
