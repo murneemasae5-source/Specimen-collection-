@@ -8,8 +8,8 @@
     <style>
         body { 
             font-family: 'Sarabun', sans-serif; 
-            background: #121212; 
-            color: #ffffff; 
+            background: #F9F8F3; 
+            color: #4A5568; 
             display: flex; 
             justify-content: center; 
             align-items: center;
@@ -18,20 +18,20 @@
             padding: 20px;
         }
         .card { 
-            background: #1e1e1e; 
+            background: #FFFFFF; 
             width: 100%; 
             max-width: 500px; 
             border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+            box-shadow: 0 15px 35px rgba(27, 54, 93, 0.08); 
             overflow: hidden; 
             display: none; 
-            border: 1px solid #333;
+            border: 1px solid #E5E2D9;
         }
         .photo-container {
             width: 100%;
             height: 350px;
             overflow: hidden;
-            background: #000;
+            background: #F0EFEA;
             display: none;
         }
         .photo-container img { 
@@ -43,12 +43,43 @@
         }
         .photo-container img:hover { transform: scale(1.2); }
         .content { padding: 30px; }
-        h1 { color: #bb86fc; font-size: 28px; margin: 0 0 5px 0; font-style: italic; }
-        .common-name { color: #03dac6; font-size: 18px; margin-bottom: 25px; }
-        .info-group { margin-bottom: 20px; border-left: 2px solid #333; padding-left: 15px; }
-        .label { color: #888; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .value { color: #e0e0e0; font-size: 16px; margin: 5px 0 0 0; }
-        .error { color: #cf6679; text-align: center; font-size: 18px; line-height: 1.6; }
+        h1 { 
+            color: #1B365D; 
+            font-size: 28px; 
+            margin: 0 0 5px 0; 
+            font-style: italic; 
+        }
+        .common-name { 
+            color: #3B5998; 
+            font-size: 18px; 
+            font-weight: 500;
+            margin-bottom: 25px; 
+        }
+        .info-group { 
+            margin-bottom: 18px; 
+            border-left: 3px solid #1B365D; 
+            padding-left: 15px; 
+        }
+        .label { 
+            color: #718096; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin: 0;
+        }
+        .value { 
+            color: #4A5568; 
+            font-size: 16px; 
+            margin: 4px 0 0 0; 
+            font-weight: 500;
+        }
+        .error { 
+            color: #C53030; 
+            text-align: center; 
+            font-size: 18px; 
+            line-height: 1.6; 
+        }
     </style>
 </head>
 <body>
@@ -68,6 +99,10 @@
             <div class="info-group">
                 <p class="label">Collection Site & Date</p>
                 <p id="meta" class="value"></p>
+            </div>
+            <div class="info-group">
+                <p class="label">Preservative</p>
+                <p id="preservative" class="value"></p>
             </div>
         </div>
     </div>
@@ -103,6 +138,7 @@
                         document.getElementById('specimen_id').innerText = safeText(item.new_id);
                         document.getElementById('taxon').innerText = `${safeText(item.phylum)} > ${safeText(item.class)} > ${safeText(item.family)}`;
                         document.getElementById('meta').innerText = `${safeText(item.location)} / ${safeText(item.date)}`;
+                        document.getElementById('preservative').innerText = safeText(item.preservative);
                         
                         const photoBox = document.getElementById('photo');
                         const imgUrl = item.image_url ? item.image_url.trim() : "";
